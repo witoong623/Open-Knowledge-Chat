@@ -15,7 +15,7 @@
 <div class="chat-shell d-flex">
     <!-- Sidebar -->
     <aside class="chat-sidebar border-end bg-light p-3 d-flex flex-column">
-        <form action="{% url 'chat:new_session' %}" method="post" hx-post="{% url 'chat:new_session' %}" class="mb-3">
+        <form action="{% url 'chat:new_session' %}" method="post" class="mb-3">
             {% csrf_token %}
             <button type="submit" class="btn btn-primary w-100">+ New chat</button>
         </form>

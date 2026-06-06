@@ -1,9 +1,8 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
-from django_htmx.http import HttpResponseClientRedirect
 
 from chat.models import ConversationSession
 from chat.services import generate_reply
@@ -36,8 +35,7 @@ class NewSessionView(LoginRequiredMixin, View):
 
     def post(self, request):
         session = ConversationSession.objects.create(user=request.user)
-        url = f"{reverse('chat:index')}?session={session.pk}"
-        return HttpResponseClientRedirect(url)
+        return redirect(f"{reverse('chat:index')}?session={session.pk}")
 
 
 class SendMessageView(LoginRequiredMixin, View):
