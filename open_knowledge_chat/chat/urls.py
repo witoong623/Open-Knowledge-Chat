@@ -1,0 +1,11 @@
+from django.urls import path
+
+from chat import views
+
+app_name = 'chat'
+
+urlpatterns = [
+    path('', views.ChatIndexView.as_view(), name='index'),
+    path('sessions/new/', views.NewSessionView.as_view(), name='new_session'),
+    path('sessions/<int:pk>/message/', views.SendMessageView.as_view(), name='send_message'),
+]
