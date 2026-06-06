@@ -8,14 +8,14 @@
     <title>{% block title %}Open Knowledge Chat{% endblock %}</title>
 
     <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+    <link href="{% static 'bootstrap-5.3.8.min.css' %}" rel="stylesheet"
         integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 
     <!-- HTMX -->
     {% htmx_script %}
 
     <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js"></script>
+    <script defer src="{% static 'alpinejs-3.15.12.min.js' %}"></script>
 
     {% block extra_head %}{% endblock %}
 </head>
@@ -49,7 +49,7 @@
     {% block content %}{% endblock %}
 
     <!-- Bootstrap JS bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+    <script src="{% static 'bootstrap-5.3.8.bundle.min.js' %}"
         integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     {% block extra_body %}{% endblock %}
 </body>
