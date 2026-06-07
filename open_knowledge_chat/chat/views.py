@@ -1,11 +1,18 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse
+from django.http import HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.html import escape
 from django.views import View
 
 from chat.models import ConversationSession
-from chat.services import generate_reply
+from chat.services import generate_reply_stream
+
+
+def sse_event(name, data):
+    """Format ``name``/``data`` as an SSE frame, splitting multi-line data across ``data:`` lines."""
+    payload = ''.join(f'data: {line}\n' for line in (data.splitlines() or ['']))
+    return f'event: {name}\n{payload}\n'
 
 
 class ChatIndexView(LoginRequiredMixin, View):
@@ -39,7 +46,7 @@ class NewSessionView(LoginRequiredMixin, View):
 
 
 class SendMessageView(LoginRequiredMixin, View):
-    """Handle a posted message and return the user + AI message bubbles."""
+    """Handle a posted message and return a fragment that opens an SSE stream for the reply."""
 
     def post(self, request, pk):
         session = get_object_or_404(ConversationSession, pk=pk, user=request.user)
@@ -47,14 +54,32 @@ class SendMessageView(LoginRequiredMixin, View):
         if not message:
             return HttpResponse(status=204)
 
-        reply = generate_reply(message)
-
         # Name the session after its first message while it still has the default title.
         if session.title == 'New conversation':
             session.title = message[:50]
         session.save()
 
-        return render(request, 'chat/partials/messages.html', {
-            'user_message': message,
-            'ai_reply': reply,
+        return render(request, 'chat/partials/stream_container.html', {
+            'session': session,
+            'message': message,
         })
+
+
+class MessageStreamView(LoginRequiredMixin, View):
+    """Stream the user message and AI reply to the client over SSE."""
+
+    def get(self, request, pk):
+        get_object_or_404(ConversationSession, pk=pk, user=request.user)
+        message = request.GET.get('message', '').strip()
+        if not message:
+            return HttpResponse(status=204)
+
+        def event_stream():
+            for chunk in generate_reply_stream(message):
+                yield sse_event('ai-chunk', escape(chunk))
+            yield sse_event('done', '')
+
+        response = StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+        response['Cache-Control'] = 'no-cache'
+        response['X-Accel-Buffering'] = 'no'
+        return response
