@@ -3,7 +3,7 @@
 This is the single seam for the chat's AI backend.
 """
 
-import signal
+import atexit
 
 from django.conf import settings
 from langchain.agents import create_agent
@@ -34,10 +34,7 @@ def generate_reply_stream(message, thread_id):
             yield chunk.content
 
 
-def close_pool_on_sigterm(*args):
-    """Close the connection pool on SIGTERM so that the process can exit gracefully."""
-    _pool.close()
-
-
-# Register the SIGTERM handler to close the pool gracefully.
-signal.signal(signal.SIGTERM, close_pool_on_sigterm)
+# Close the pool on normal interpreter shutdown (e.g. Ctrl+C / SIGINT) so that
+# ConnectionPool.__del__ doesn't try to join its worker threads during finalization,
+# which raises PythonFinalizationError on Python 3.13+.
+atexit.register(_pool.close)
