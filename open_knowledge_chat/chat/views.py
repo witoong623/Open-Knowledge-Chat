@@ -69,13 +69,13 @@ class MessageStreamView(LoginRequiredMixin, View):
     """Stream the user message and AI reply to the client over SSE."""
 
     def get(self, request, pk):
-        get_object_or_404(ConversationSession, pk=pk, user=request.user)
+        session = get_object_or_404(ConversationSession, pk=pk, user=request.user)
         message = request.GET.get('message', '').strip()
         if not message:
             return HttpResponse(status=204)
 
         def event_stream():
-            for chunk in generate_reply_stream(message):
+            for chunk in generate_reply_stream(message, session.thread_id):
                 yield sse_event('ai-chunk', escape(chunk))
             yield sse_event('done', '')
 
