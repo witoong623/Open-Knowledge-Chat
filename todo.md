@@ -1,0 +1,3 @@
+- should allow no conversation session at the beginning. Or at least it should appear like that. No "New conversation" appear at the top.
+    - It also shuold allow user to type to start the new conversation right away.
+- the way that I pass the message itself to the sse endpoint as parameter again doesn't seem to be good. I think I should just pass session id? assume that I save the message immediately.

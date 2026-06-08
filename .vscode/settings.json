@@ -3,5 +3,6 @@
     "terminal.integrated.env.linux": {
         "PYTHONPATH": "open_knowledge_chat",
         "DJANGO_SETTINGS_MODULE": "config.settings"
-    }
+    },
+    "python.terminal.useEnvFile": true
 }

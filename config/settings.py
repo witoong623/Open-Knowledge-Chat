@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 
+from langgraph.checkpoint.postgres import PostgresSaver
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -131,3 +133,8 @@ AUTH_USER_MODEL = 'core.User'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'chat:index'
 LOGOUT_REDIRECT_URL = 'login'
+
+# Langchain
+LANGCHAIN_DB_URI = 'postgresql://okc:okc_password@localhost:5432/okc?sslmode=disable'
+with PostgresSaver.from_conn_string(LANGCHAIN_DB_URI) as checkpointer:
+    checkpointer.setup()
