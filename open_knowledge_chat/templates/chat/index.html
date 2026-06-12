@@ -35,8 +35,17 @@
     <main class="flex-grow-1 d-flex flex-column">
         <div id="chat-log" class="flex-grow-1 p-3 d-flex flex-column gap-2"
              x-data
+             x-init="$el.scrollTop = $el.scrollHeight"
              @htmx:after-swap.window="$el.scrollTop = $el.scrollHeight">
+            {% for message in chat_messages %}
+                {% if message.type == 'human' %}
+                <div class="chat-bubble align-self-end bg-primary text-white rounded p-2 px-3">{{ message.content }}</div>
+                {% else %}
+                <div class="chat-bubble align-self-start bg-white border rounded p-2 px-3">{{ message.content }}</div>
+                {% endif %}
+            {% empty %}
             <p class="text-muted text-center">Send a message to start the conversation.</p>
+            {% endfor %}
         </div>
 
         <div class="border-top p-3">

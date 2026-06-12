@@ -22,6 +22,12 @@ checkpointer = PostgresSaver(_pool)
 agent = create_agent('openai:gpt-5.4-mini', tools=[], checkpointer=checkpointer)
 
 
+def get_message_history(thread_id):
+    """Return the messages exchanged so far on ``thread_id``, oldest first."""
+    config = {'configurable': {'thread_id': str(thread_id)}}
+    return agent.get_state(config).values.get('messages', [])
+
+
 def generate_reply_stream(message, thread_id):
     """Yield the AI's reply to a user ``message`` in chunks as they're produced."""
     config = {'configurable': {'thread_id': str(thread_id)}}
