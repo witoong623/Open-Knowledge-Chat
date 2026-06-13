@@ -12,6 +12,7 @@ Open Knowledge Chat — a Django 6.0 chat application using Python 3.14+, with H
 - **`open_knowledge_chat/`** — Application package containing Django apps
   - **`core/`** — Core app with shared base models and utilities
   - **`chat/`** — Chat feature app
+  - **`document`** — Document app that store and ingest document to build knowledge base
   - **`templates/`** — Templates directory. Each app store its template within this directory, not in the app directory. base template is `open_knowledge_chat/templates/base.html`.
 
 Apps are registered in `INSTALLED_APPS` without the `open_knowledge_chat.` prefix (e.g., `'core'`, `'chat'`). The `PYTHONPATH` includes `open_knowledge_chat/` so imports use the short form: `from core.models import TimeStampedModel`.
