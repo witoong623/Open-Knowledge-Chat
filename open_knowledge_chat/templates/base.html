@@ -18,6 +18,10 @@
     <!-- Alpine.js -->
     <script defer src="{% static 'alpinejs-3.15.12.min.js' %}"></script>
 
+    <!-- Markdown rendering -->
+    <script src="{% static 'marked-18.0.5.umd.min.js' %}"></script>
+    <script src="{% static 'purify-3.4.10.min.js' %}"></script>
+
     {% block extra_head %}{% endblock %}
 </head>
 <body hx-headers='{"x-csrftoken": "{{ csrf_token }}"}'>
@@ -52,6 +56,11 @@
     <!-- Bootstrap JS bundle -->
     <script src="{% static 'bootstrap-5.3.8.bundle.min.js' %}"
         integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+    <script>
+        marked.setOptions({ breaks: true, gfm: true });
+        window.renderMarkdown = (text) => DOMPurify.sanitize(marked.parse(text || ''));
+    </script>
     {% block extra_body %}{% endblock %}
 </body>
 </html>

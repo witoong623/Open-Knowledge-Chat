@@ -8,6 +8,10 @@
     .chat-sidebar { width: 280px; overflow-y: auto; }
     #chat-log { overflow-y: auto; }
     .chat-bubble { max-width: 75%; white-space: pre-wrap; }
+    .chat-bubble.markdown-body { white-space: normal; }
+    .chat-bubble.markdown-body :first-child { margin-top: 0; }
+    .chat-bubble.markdown-body :last-child { margin-bottom: 0; }
+    .chat-bubble.markdown-body pre { white-space: pre-wrap; word-wrap: break-word; }
 </style>
 {% endblock %}
 
@@ -41,7 +45,8 @@
                 {% if message.type == 'human' %}
                 <div class="chat-bubble align-self-end bg-primary text-white rounded p-2 px-3">{{ message.content }}</div>
                 {% else %}
-                <div class="chat-bubble align-self-start bg-white border rounded p-2 px-3">{{ message.content }}</div>
+                <div class="chat-bubble markdown-body align-self-start bg-white border rounded p-2 px-3"
+                     x-data x-init="$el.innerHTML = renderMarkdown($el.textContent)">{{ message.content }}</div>
                 {% endif %}
             {% empty %}
             <p class="text-muted text-center">Send a message to start the conversation.</p>

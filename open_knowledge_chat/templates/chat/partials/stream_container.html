@@ -2,7 +2,12 @@
 <div hx-ext="sse"
      sse-connect="{% url 'chat:stream_message' session.pk %}"
      sse-close="done"
-     class="d-flex flex-column gap-2">
+     class="d-flex flex-column gap-2"
+     x-data
+     x-init="new MutationObserver(() => {
+         $refs.aiOut.innerHTML = renderMarkdown($refs.aiRaw.textContent);
+     }).observe($refs.aiRaw, { childList: true, characterData: true, subtree: true })">
     <div class="chat-bubble align-self-end bg-primary text-white rounded p-2 px-3">{{ message }}</div>
-    <div class="chat-bubble align-self-start bg-white border rounded p-2 px-3" sse-swap="ai-chunk" hx-swap="beforeend"></div>
+    <div x-ref="aiRaw" sse-swap="ai-chunk" hx-swap="beforeend" class="d-none"></div>
+    <div x-ref="aiOut" class="chat-bubble markdown-body align-self-start bg-white border rounded p-2 px-3"></div>
 </div>
