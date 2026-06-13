@@ -42,7 +42,9 @@ class NewSessionView(LoginRequiredMixin, View):
     """Create a fresh conversation session and switch to it."""
 
     def post(self, request):
-        session = ConversationSession.objects.create(user=request.user)
+        session = ConversationSession.objects.filter(user=request.user, used=False).first()
+        if session is None:
+            session = ConversationSession.objects.create(user=request.user)
         return redirect(f"{reverse('chat:index')}?session={session.pk}")
 
 
@@ -58,6 +60,7 @@ class SendMessageView(LoginRequiredMixin, View):
         # Name the session after its first message while it still has the default title.
         if session.title == 'New conversation':
             session.title = message[:50]
+        session.used = True
         session.save()
 
         return render(request, 'chat/partials/stream_container.html', {
