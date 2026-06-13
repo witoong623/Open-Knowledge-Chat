@@ -10,8 +10,12 @@ from chat.services import generate_reply_stream, get_message_history
 
 
 def sse_event(name, data):
-    """Format ``name``/``data`` as an SSE frame, splitting multi-line data across ``data:`` lines."""
-    payload = ''.join(f'data: {line}\n' for line in (data.splitlines() or ['']))
+    """Format ``name``/``data`` as an SSE frame, splitting multi-line data across ``data:`` lines
+    so embedded newlines survive and are reconstructed by the client.
+    A raw '\n' in data would be read as an SSE line break, not content, and
+    split the message early. Sending each line as its own `data:` field lets
+    the client rejoin them with '\n' to recover the original text."""
+    payload = ''.join(f'data: {line}\n' for line in data.split('\n'))
     return f'event: {name}\n{payload}\n'
 
 
