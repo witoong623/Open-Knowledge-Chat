@@ -1,1 +1,0 @@
-- the way that I pass the message itself to the sse endpoint as parameter again doesn't seem to be good. I think I should just pass session id? assume that I save the message immediately.
