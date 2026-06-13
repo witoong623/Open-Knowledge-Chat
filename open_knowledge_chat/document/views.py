@@ -40,6 +40,20 @@ class DocumentUploadView(LoginRequiredMixin, View):
         })
 
 
+class DocumentDeleteView(LoginRequiredMixin, View):
+    """Delete an uploaded document and return the refreshed document section."""
+
+    def delete(self, request, pk):
+        document = get_object_or_404(Document, pk=pk, user=request.user)
+        document.file.delete(save=False)
+        document.delete()
+
+        return render(request, 'document/index.html#document-section', {
+            'documents': request.user.documents.all(),
+            'form': DocumentUploadForm(),
+        })
+
+
 class DocumentPreviewView(LoginRequiredMixin, View):
     """Stream an uploaded document back for inline preview in the browser."""
 

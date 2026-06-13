@@ -31,9 +31,19 @@
                     <div class="fw-medium">{{ document.name }}</div>
                     <div class="text-muted small">Uploaded {{ document.created|date:'Y-m-d H:i' }}</div>
                 </div>
-                <a href="{% url 'document:preview' document.pk %}" target="_blank" class="btn btn-outline-secondary btn-sm">
-                    Preview
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'document:preview' document.pk %}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                        Preview
+                    </a>
+                    <button type="button"
+                            hx-delete="{% url 'document:delete' document.pk %}"
+                            hx-target="#document-section"
+                            hx-swap="outerHTML"
+                            hx-confirm="Are you sure you want to delete &quot;{{ document.name }}&quot;?"
+                            class="btn btn-outline-danger btn-sm">
+                        Delete
+                    </button>
+                </div>
             </div>
             {% empty %}
             <p class="text-muted">No documents uploaded yet.</p>
