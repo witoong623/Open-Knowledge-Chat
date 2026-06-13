@@ -1,3 +1,36 @@
+from django.conf import settings
+from django.core.validators import FileExtensionValidator
 from django.db import models
 
-# Create your models here.
+from core.models import TimeStampedModel
+
+ALLOWED_EXTENSIONS = ['txt', 'md', 'pdf']
+
+
+def document_upload_path(instance, filename):
+    return f'documents/{instance.user_id}/{filename}'
+
+
+class Document(TimeStampedModel):
+    """An uploaded file that can be ingested into the knowledge base."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='documents',
+    )
+    name = models.CharField(max_length=255)
+    file = models.FileField(
+        upload_to=document_upload_path,
+        validators=[FileExtensionValidator(allowed_extensions=ALLOWED_EXTENSIONS)],
+    )
+
+    class Meta:
+        ordering = ['-created']
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def extension(self):
+        return self.name.rsplit('.', 1)[-1].lower()

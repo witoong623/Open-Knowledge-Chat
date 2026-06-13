@@ -6,5 +6,40 @@
 <div class="container py-5">
     <h1 class="h3 mb-3">Document</h1>
     <p class="text-muted">Manage and ingest documents to build the knowledge base.</p>
+
+    {% partialdef document-section inline %}
+    <div id="document-section">
+        <form hx-post="{% url 'document:upload' %}"
+              hx-target="#document-section"
+              hx-swap="outerHTML"
+              hx-encoding="multipart/form-data"
+              class="d-flex gap-2 align-items-start mb-4">
+            {% csrf_token %}
+            <div class="flex-grow-1">
+                <input type="file" name="file" accept=".txt,.md,.pdf" class="form-control" required>
+                {% for error in form.file.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <button type="submit" class="btn btn-primary">Upload</button>
+        </form>
+
+        <div class="list-group">
+            {% for document in documents %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="fw-medium">{{ document.name }}</div>
+                    <div class="text-muted small">Uploaded {{ document.created|date:'Y-m-d H:i' }}</div>
+                </div>
+                <a href="{% url 'document:preview' document.pk %}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                    Preview
+                </a>
+            </div>
+            {% empty %}
+            <p class="text-muted">No documents uploaded yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+    {% endpartialdef %}
 </div>
 {% endblock %}
