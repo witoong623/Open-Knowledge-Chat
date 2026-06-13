@@ -54,8 +54,10 @@
                   hx-swap="beforeend"
                   hx-on::after-request="this.reset()"
                   class="d-flex gap-2">
-                <input type="text" name="message" class="form-control" placeholder="Type your message…"
-                       autocomplete="off" autofocus required>
+                <textarea name="message" class="form-control" placeholder="Type your message…"
+                          style="resize: none;" autocomplete="off" autofocus required
+                          x-data="{ rows: 1 }" :rows="rows"
+                          @keydown.enter="if ($event.shiftKey) { rows += 1; } else { $event.preventDefault(); $el.closest('form').requestSubmit(); }"></textarea>
                 <button type="submit" class="btn btn-primary">Send</button>
             </form>
         </div>
