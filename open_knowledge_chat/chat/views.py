@@ -61,6 +61,7 @@ class SendMessageView(LoginRequiredMixin, View):
         if session.title == 'New conversation':
             session.title = message[:50]
         session.used = True
+        session.pending_message = message
         session.save()
 
         return render(request, 'chat/partials/stream_container.html', {
@@ -74,9 +75,12 @@ class MessageStreamView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
         session = get_object_or_404(ConversationSession, pk=pk, user=request.user)
-        message = request.GET.get('message', '').strip()
+        message = session.pending_message
         if not message:
             return HttpResponse(status=204)
+
+        session.pending_message = None
+        session.save(update_fields=['pending_message'])
 
         def event_stream():
             for chunk in generate_reply_stream(message, session.thread_id):

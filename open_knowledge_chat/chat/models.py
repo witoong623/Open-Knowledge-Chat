@@ -20,6 +20,7 @@ class ConversationSession(TimeStampedModel):
     title = models.CharField(max_length=255, default='New conversation')
     thread_id = models.UUIDField(unique=True, default=uuid.uuid7, editable=False)
     used = models.BooleanField(default=False)
+    pending_message = models.TextField(null=True, default=None)
 
     class Meta:
         ordering = ['-modified']

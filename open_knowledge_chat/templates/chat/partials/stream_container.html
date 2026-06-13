@@ -1,6 +1,6 @@
 {# Opens an SSE connection that streams the user bubble, then the AI reply chunks, into this fragment. #}
 <div hx-ext="sse"
-     sse-connect="{% url 'chat:stream_message' session.pk %}?message={{ message|urlencode }}"
+     sse-connect="{% url 'chat:stream_message' session.pk %}"
      sse-close="done"
      class="d-flex flex-column gap-2">
     <div class="chat-bubble align-self-end bg-primary text-white rounded p-2 px-3">{{ message }}</div>
