@@ -26,3 +26,11 @@ Apps are registered in `INSTALLED_APPS` without the `open_knowledge_chat.` prefi
 ## Code Style
 - PEP 8
 - 120 maximum characters per line.
+
+## Running during development
+Set two environment variable before running Django commands:
+- PYTHONPATH: open_knowledge_chat
+- DJANGO_SETTINGS_MODULE: config.settings
+
+Run django command from root directory of this project.
+You also need to load environment variable from `.env` file before running as well.
