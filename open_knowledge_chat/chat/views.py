@@ -84,7 +84,7 @@ class MessageStreamView(LoginRequiredMixin, View):
             return HttpResponse(status=204)
 
         session.pending_message = None
-        session.save(update_fields=['pending_message'])
+        session.save(update_fields=['pending_message', 'modified'])
 
         def event_stream():
             for chunk in generate_reply_stream(message, session.thread_id):

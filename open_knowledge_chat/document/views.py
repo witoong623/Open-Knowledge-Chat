@@ -8,6 +8,7 @@ from django.views.generic import TemplateView
 
 from document.forms import DocumentUploadForm
 from document.models import Document
+from document.tasks import ingest_document
 
 
 class DocumentIndexView(LoginRequiredMixin, TemplateView):
@@ -31,7 +32,9 @@ class DocumentUploadView(LoginRequiredMixin, View):
             document = form.save(commit=False)
             document.user = request.user
             document.name = document.file.name
+            document.ingestion_status = Document.IngestionStatus.INGESTING
             document.save()
+            ingest_document.delay_on_commit(document.id)
             form = DocumentUploadForm()
 
         return render(request, 'document/index.html#document-section', {
@@ -52,6 +55,14 @@ class DocumentDeleteView(LoginRequiredMixin, View):
             'documents': request.user.documents.all(),
             'form': DocumentUploadForm(),
         })
+
+
+class DocumentStatusView(LoginRequiredMixin, View):
+    """Return the ingestion status badge for a document (polled while ingesting)."""
+
+    def get(self, request, pk):
+        document = get_object_or_404(Document, pk=pk, user=request.user)
+        return render(request, 'document/index.html#document-status', {'document': document})
 
 
 class DocumentPreviewView(LoginRequiredMixin, View):

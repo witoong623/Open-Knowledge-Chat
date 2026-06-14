@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 from langgraph.checkpoint.postgres import PostgresSaver
@@ -41,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'django_htmx',
+    'django_celery_results',
 
     'core',
     'chat',
@@ -113,7 +115,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Bangkok'
 
 USE_I18N = True
 
@@ -142,3 +144,16 @@ LOGOUT_REDIRECT_URL = 'login'
 LANGCHAIN_DB_URI = 'postgresql://okc:okc_password@localhost:5432/okc?sslmode=disable'
 with PostgresSaver.from_conn_string(LANGCHAIN_DB_URI) as checkpointer:
     checkpointer.setup()
+
+# SQLAlchemy-style connection string used by the pgvector store (PGVector).
+VECTOR_DB_URL = 'postgresql+psycopg://okc:okc_password@localhost:5432/okc'
+VECTOR_COLLECTION_NAME = 'documents'
+EMBEDDING_MODEL = 'text-embedding-3-small'
+
+
+# Celery
+# Defaults to a local Redis; override via the CELERY_BROKER_URL env var (e.g. in production).
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_CACHE_BACKEND = 'django-cache'
+CELERY_TIMEZONE = TIME_ZONE

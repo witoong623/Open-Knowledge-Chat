@@ -30,6 +30,22 @@
                 <div>
                     <div class="fw-medium">{{ document.name }}</div>
                     <div class="text-muted small">Uploaded {{ document.created|date:'Y-m-d H:i' }}</div>
+                    {% partialdef document-status inline %}
+                    <span id="document-status-{{ document.pk }}"
+                          class="badge mt-1
+                                 {% if document.ingestion_status == 'completed' %}text-bg-success
+                                 {% elif document.ingestion_status == 'failed' %}text-bg-danger
+                                 {% elif document.ingestion_status == 'ingesting' %}text-bg-info
+                                 {% else %}text-bg-secondary{% endif %}"
+                          {% if document.ingestion_status == 'ingesting' %}
+                          hx-get="{% url 'document:status' document.pk %}"
+                          hx-trigger="every 5s"
+                          hx-target="this"
+                          hx-swap="outerHTML"
+                          {% endif %}>
+                        {{ document.get_ingestion_status_display }}
+                    </span>
+                    {% endpartialdef %}
                 </div>
                 <div class="d-flex gap-2">
                     <a href="{% url 'document:preview' document.pk %}" target="_blank" class="btn btn-outline-secondary btn-sm">

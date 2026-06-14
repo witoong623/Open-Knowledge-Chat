@@ -38,3 +38,7 @@ If you want to check specific Django features by running code in Python interpre
 ## Django view guidelines
 ### Integrating HTMX with Django view
 You can use [django-htmx](resources/django-htmx.md) package to help integrating HTMX with Django view e.g. check if request is made from HTMX or return response specifically for HTMX.
+
+## Django Celery guidelines
+### Use `delay_on_commit` to trigger Celery task after transaction is committed
+When triggering a Celery task from a Django view or model method that is wrapped in a database transaction, use `delay_on_commit` instead of `delay` to ensure that the task is only triggered after the transaction is successfully committed.

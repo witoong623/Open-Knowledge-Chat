@@ -8,7 +8,7 @@ Open Knowledge Chat — a Django 6.0 chat application using Python 3.14+, with H
 
 ## Architecture
 
-- **`config/`** — Django project settings, root URL conf, WSGI/ASGI entry points
+- **`config/`** — Django project settings, root URL conf, celery, WSGI/ASGI entry points
 - **`open_knowledge_chat/`** — Application package containing Django apps
   - **`core/`** — Core app with shared base models and utilities
   - **`chat/`** — Chat feature app

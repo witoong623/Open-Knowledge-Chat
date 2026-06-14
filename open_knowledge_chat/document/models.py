@@ -14,6 +14,12 @@ def document_upload_path(instance, filename):
 class Document(TimeStampedModel):
     """An uploaded file that can be ingested into the knowledge base."""
 
+    class IngestionStatus(models.TextChoices):
+        NOT_INGESTED = 'not_ingested', 'Not ingested'
+        INGESTING = 'ingesting', 'Ingesting'
+        COMPLETED = 'completed', 'Completed'
+        FAILED = 'failed', 'Failed'
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -23,6 +29,11 @@ class Document(TimeStampedModel):
     file = models.FileField(
         upload_to=document_upload_path,
         validators=[FileExtensionValidator(allowed_extensions=ALLOWED_EXTENSIONS)],
+    )
+    ingestion_status = models.CharField(
+        max_length=20,
+        choices=IngestionStatus.choices,
+        default=IngestionStatus.NOT_INGESTED,
     )
 
     class Meta:
