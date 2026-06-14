@@ -141,12 +141,12 @@ LOGIN_REDIRECT_URL = 'chat:index'
 LOGOUT_REDIRECT_URL = 'login'
 
 # Langchain
-LANGCHAIN_DB_URI = 'postgresql://okc:okc_password@localhost:5432/okc?sslmode=disable'
+LANGCHAIN_DB_URI = 'postgresql://okc:okc_password@localhost:5432/langchain'
 with PostgresSaver.from_conn_string(LANGCHAIN_DB_URI) as checkpointer:
     checkpointer.setup()
 
 # SQLAlchemy-style connection string used by the pgvector store (PGVector).
-VECTOR_DB_URL = 'postgresql+psycopg://okc:okc_password@localhost:5432/okc'
+VECTOR_DB_URL = 'postgresql+psycopg://okc:okc_password@localhost:5432/langchain'
 VECTOR_COLLECTION_NAME = 'documents'
 EMBEDDING_MODEL = 'text-embedding-3-small'
 
