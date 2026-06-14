@@ -5,13 +5,13 @@
 {% block extra_head %}
 <style>
     .chat-shell { height: calc(100vh - 56px); }
-    .chat-sidebar { width: 280px; overflow-y: auto; }
-    #chat-log { overflow-y: auto; }
-    .chat-bubble { max-width: 75%; white-space: pre-wrap; }
-    .chat-bubble.markdown-body { white-space: normal; }
+    .chat-sidebar { width: 280px; flex-shrink: 0; overflow-y: auto; }
+    #chat-log { overflow-y: auto; overflow-x: hidden; min-width: 0; }
+    .chat-bubble { max-width: 80%; white-space: pre-wrap; }
+    .chat-bubble.markdown-body { max-width: 100%; white-space: normal; }
     .chat-bubble.markdown-body :first-child { margin-top: 0; }
     .chat-bubble.markdown-body :last-child { margin-bottom: 0; }
-    .chat-bubble.markdown-body pre { white-space: pre-wrap; word-wrap: break-word; }
+    .chat-bubble.markdown-body pre { white-space: pre-wrap; word-wrap: break-word; max-width: 100%; overflow-x: auto; }
 </style>
 {% endblock %}
 
