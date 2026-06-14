@@ -4,19 +4,24 @@ Reads an uploaded file, splits it into chunks, embeds the chunks with OpenAI,
 and stores the embeddings in a pgvector-backed vector store.
 """
 
+import atexit
 import logging
 
 from django.conf import settings
 from langchain_openai import OpenAIEmbeddings
 from langchain_postgres import PGVector
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from sqlalchemy import create_engine
 
 from document.models import Document
+
 
 logger = logging.getLogger(__name__)
 
 # Plain-text formats handled by the current pipeline.
 SUPPORTED_EXTENSIONS = ('txt', 'md')
+
+SQLALCHEMY_ENGINE = create_engine(settings.VECTOR_DB_URL)
 
 
 def get_vector_store():
@@ -25,7 +30,7 @@ def get_vector_store():
     # TODO: should I maintain sqlalchemy's engine outside of PGVector?
     return PGVector(
         embeddings=embeddings,
-        connection=settings.VECTOR_DB_URL,
+        connection=SQLALCHEMY_ENGINE,
         collection_name=settings.VECTOR_COLLECTION_NAME,
         use_jsonb=True,
     )
@@ -69,3 +74,6 @@ def ingest_file_document(document_id):
 
     document.save(update_fields=['ingestion_status', 'modified'])
     return document.ingestion_status
+
+
+atexit.register(SQLALCHEMY_ENGINE.dispose)
