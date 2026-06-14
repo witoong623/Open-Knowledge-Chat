@@ -87,7 +87,7 @@ class MessageStreamView(LoginRequiredMixin, View):
         session.save(update_fields=['pending_message', 'modified'])
 
         def event_stream():
-            for chunk in generate_reply_stream(message, session.thread_id):
+            for chunk in generate_reply_stream(message, session.thread_id, request.user.id):
                 yield sse_event('ai-chunk', escape(chunk))
             yield sse_event('done', '')
 

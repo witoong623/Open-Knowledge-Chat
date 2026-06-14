@@ -12,6 +12,8 @@ from langgraph.checkpoint.postgres import PostgresSaver
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
+from document.services import search_knowledge_base
+
 # A pooled connection lets the checkpointer be shared safely across concurrent requests.
 _pool = ConnectionPool(
     conninfo=settings.LANGCHAIN_DB_URI,
@@ -19,7 +21,7 @@ _pool = ConnectionPool(
     open=True,
 )
 checkpointer = PostgresSaver(_pool)
-agent = create_agent('openai:gpt-5.4-mini', tools=[], checkpointer=checkpointer)
+agent = create_agent('openai:gpt-5.4-mini', tools=[search_knowledge_base], checkpointer=checkpointer)
 
 
 def get_message_history(thread_id):
@@ -28,9 +30,9 @@ def get_message_history(thread_id):
     return agent.get_state(config).values.get('messages', [])
 
 
-def generate_reply_stream(message, thread_id):
+def generate_reply_stream(message, thread_id, user_id):
     """Yield the AI's reply to a user ``message`` in chunks as they're produced."""
-    config = {'configurable': {'thread_id': str(thread_id)}}
+    config = {'configurable': {'thread_id': str(thread_id), 'user_id': user_id}}
     for chunk, _metadata in agent.stream(
         {'messages': [HumanMessage(message)]},
         config=config,

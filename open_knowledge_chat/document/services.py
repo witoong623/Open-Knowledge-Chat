@@ -8,6 +8,8 @@ import atexit
 import logging
 
 from django.conf import settings
+from langchain_core.runnables import RunnableConfig
+from langchain_core.tools import tool
 from langchain_openai import OpenAIEmbeddings
 from langchain_postgres import PGVector
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -74,6 +76,22 @@ def ingest_file_document(document_id):
 
     document.save(update_fields=['ingestion_status', 'modified'])
     return document.ingestion_status
+
+
+@tool
+def search_knowledge_base(query: str, config: RunnableConfig) -> str:
+    """Search the user's uploaded documents for content relevant to the query.
+
+    Use this to find information from documents the user has uploaded before answering
+    questions about their knowledge base.
+    """
+    user_id = config['configurable']['user_id']
+    results = get_vector_store().similarity_search(query, k=3, filter={'user_id': user_id})
+
+    if not results:
+        return 'No relevant documents found.'
+
+    return '\n\n'.join(f'Source: {doc.metadata.get("name", "unknown")}\n{doc.page_content}' for doc in results)
 
 
 atexit.register(SQLALCHEMY_ENGINE.dispose)
