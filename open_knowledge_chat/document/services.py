@@ -8,9 +8,11 @@ import atexit
 import logging
 
 from django.conf import settings
+from langchain_core.documents import Document as LangchainDocument
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
 from langchain_openai import OpenAIEmbeddings
+from langchain_opendataloader_pdf import OpenDataLoaderPDFLoader
 from langchain_postgres import PGVector
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sqlalchemy import create_engine
@@ -20,8 +22,8 @@ from document.models import Document
 
 logger = logging.getLogger(__name__)
 
-# Plain-text formats handled by the current pipeline.
-SUPPORTED_EXTENSIONS = ('txt', 'md')
+# File types handled by the current pipeline.
+SUPPORTED_EXTENSIONS = ('txt', 'md', 'pdf')
 
 SQLALCHEMY_ENGINE = create_engine(settings.VECTOR_DB_URL)
 
@@ -44,6 +46,15 @@ def _read_text(document):
         return fh.read()
 
 
+def _load_documents(document):
+    """Return the content of a document as a list of langchain ``Document`` objects."""
+    if document.extension == 'pdf':
+        loader = OpenDataLoaderPDFLoader(file_path=document.file.path, format='markdown')
+        return loader.load()
+
+    return [LangchainDocument(page_content=_read_text(document))]
+
+
 def ingest_file_document(document_id):
     """Ingest a document into the knowledge base, tracking status on the model.
 
@@ -58,13 +69,12 @@ def ingest_file_document(document_id):
         if document.extension not in SUPPORTED_EXTENSIONS:
             raise ValueError(f'Unsupported file type for ingestion: {document.extension}')
 
-        text = _read_text(document)
+        docs = _load_documents(document)
+        for doc in docs:
+            doc.metadata.update({'document_id': document.id, 'name': document.name, 'user_id': document.user_id})
 
         splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-        chunks = splitter.create_documents(
-            [text],
-            metadatas=[{'document_id': document.id, 'name': document.name, 'user_id': document.user_id}],
-        )
+        chunks = splitter.split_documents(docs)
 
         if chunks:
             get_vector_store().add_documents(chunks)

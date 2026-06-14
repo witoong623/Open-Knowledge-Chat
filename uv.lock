@@ -492,6 +492,19 @@ wheels = [
 ]
 
 [[package]]
+name = "langchain-opendataloader-pdf"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "langchain-core" },
+    { name = "opendataloader-pdf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/73/e9/650020e85d492ffe6cf2658fa2f6ef3476956286e9c3d6d01b0cc0ed4cba/langchain_opendataloader_pdf-2.0.0.tar.gz", hash = "sha256:14c83dc1df9f3ef0c1e5698da6d30db3a8af1151f5ae42f09bffca1156acdd47", size = 1844895, upload-time = "2026-03-16T09:21:20.265Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d8/69/38fd79483e8c3de45086202c562dea38095aedb7dfa10206ab5a7f327ad4/langchain_opendataloader_pdf-2.0.0-py3-none-any.whl", hash = "sha256:4975f06b5d1a98826f96e328e5a26d67765e87d50a87f637659da35284feeee4", size = 12965, upload-time = "2026-03-16T09:21:18.477Z" },
+]
+
+[[package]]
 name = "langchain-postgres"
 version = "0.0.17"
 source = { registry = "https://pypi.org/simple" }
@@ -677,6 +690,7 @@ dependencies = [
     { name = "django-htmx" },
     { name = "langchain" },
     { name = "langchain-openai" },
+    { name = "langchain-opendataloader-pdf" },
     { name = "langchain-postgres" },
     { name = "langchain-text-splitters" },
     { name = "langgraph-checkpoint-postgres" },
@@ -698,6 +712,7 @@ requires-dist = [
     { name = "django-htmx", specifier = ">=1.27.0" },
     { name = "langchain", specifier = ">=1.3.4" },
     { name = "langchain-openai", specifier = ">=1.2.2" },
+    { name = "langchain-opendataloader-pdf", specifier = ">=2.0.0" },
     { name = "langchain-postgres", specifier = ">=0.0.17" },
     { name = "langchain-text-splitters", specifier = ">=1.1.2" },
     { name = "langgraph-checkpoint-postgres", specifier = ">=3.1.0" },
@@ -728,6 +743,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/3c/a6/5815fe2e2aca74b36c650d1bd43b69827cee568073d0d2d9b6fc5aaac80c/openai-2.41.0.tar.gz", hash = "sha256:db5c362acd6604b84f076abbefa66826ea4b46ecba2954ed866e6a149a1352c0", size = 783525, upload-time = "2026-06-03T22:39:40.719Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/be/51/d82bb424e8aa372190c5233253a2ceb399a778747d18b42cff487411e663/openai-2.41.0-py3-none-any.whl", hash = "sha256:20cc7952e8501c7e5773dd2ef7be437bae9cb549044902e1041a83a54516e375", size = 1353378, upload-time = "2026-06-03T22:39:38.964Z" },
+]
+
+[[package]]
+name = "opendataloader-pdf"
+version = "2.4.7"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1d/5a/98cd2079f2828f7886ee447eae21ee60a858930596aebcc8d275a1fe2b12/opendataloader_pdf-2.4.7.tar.gz", hash = "sha256:a16e995f2f526d706045218d9e359a31f50371a0bc0e3bb1bc15abb467c08fb7", size = 22554865, upload-time = "2026-05-27T10:04:54.285Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b7/14/f897eabf04eab4e6a40dce9214d921558165f3eaed68335892a5b1a004d0/opendataloader_pdf-2.4.7-py3-none-any.whl", hash = "sha256:1c359183650f4c012875010c156f13b6d3477b00762b8e3fbd8479fa03feb628", size = 22568934, upload-time = "2026-05-27T10:04:49.902Z" },
 ]
 
 [[package]]
