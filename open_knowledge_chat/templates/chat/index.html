@@ -12,6 +12,12 @@
     .chat-bubble.markdown-body :first-child { margin-top: 0; }
     .chat-bubble.markdown-body :last-child { margin-bottom: 0; }
     .chat-bubble.markdown-body pre { white-space: pre-wrap; word-wrap: break-word; max-width: 100%; overflow-x: auto; }
+    .tool-activity { max-width: 80%; }
+    .tool-activity > summary { list-style: none; }
+    .tool-activity > summary::-webkit-details-marker { display: none; }
+    .tool-activity > summary::before { content: '▸ '; }
+    .tool-activity[open] > summary::before { content: '▾ '; }
+    .tool-activity pre { white-space: pre-wrap; word-wrap: break-word; max-width: 100%; }
 </style>
 {% endblock %}
 
@@ -41,16 +47,32 @@
              x-data
              x-init="$el.scrollTop = $el.scrollHeight"
              @htmx:after-swap.window="$el.scrollTop = $el.scrollHeight">
-            {% for message in chat_messages %}
-                {% if message.type == 'human' %}
-                <div class="chat-bubble align-self-end bg-primary text-white rounded p-2 px-3">{{ message.content }}</div>
-                {% else %}
+            {% partialdef message-log inline %}
+            {% for item in chat_messages %}
+                {% if item.role == 'user' %}
+                <div class="chat-bubble align-self-end bg-primary text-white rounded p-2 px-3">{{ item.content }}</div>
+                {% elif item.role == 'assistant' %}
                 <div class="chat-bubble markdown-body align-self-start bg-white border rounded p-2 px-3"
-                     x-data x-init="$el.innerHTML = renderMarkdown($el.textContent)">{{ message.content }}</div>
+                     x-data x-init="$el.innerHTML = renderMarkdown($el.textContent)">{{ item.content }}</div>
+                {% elif item.role == 'tool' %}
+                <details class="tool-activity align-self-start border rounded bg-light px-3 py-2 small">
+                    <summary class="text-muted" style="cursor: pointer;">
+                        {{ item.calls.0.label }}{% if item.calls|length > 1 %} ({{ item.calls|length }} searches){% endif %}
+                    </summary>
+                    <div class="mt-2 d-flex flex-column gap-2">
+                        {% for call in item.calls %}
+                        <div>
+                            <div class="fw-semibold text-muted">Query: {{ call.query }}</div>
+                            <pre class="mb-0 mt-1 p-2 bg-white border rounded">{{ call.result }}</pre>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </details>
                 {% endif %}
             {% empty %}
             <p class="text-muted text-center">Send a message to start the conversation.</p>
             {% endfor %}
+            {% endpartialdef %}
         </div>
 
         <div class="border-top p-3">

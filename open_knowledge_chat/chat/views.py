@@ -6,7 +6,7 @@ from django.utils.html import escape
 from django.views import View
 
 from chat.models import ConversationSession
-from chat.services import generate_reply_stream, get_message_history
+from chat.services import build_chat_log, generate_reply_stream, get_message_history
 
 
 def sse_event(name, data):
@@ -38,7 +38,21 @@ class ChatIndexView(LoginRequiredMixin, View):
         return render(request, 'chat/index.html', {
             'sessions': sessions,
             'active_session': active_session,
-            'chat_messages': get_message_history(active_session.thread_id),
+            'chat_messages': build_chat_log(get_message_history(active_session.thread_id)),
+        })
+
+
+class MessageLogView(LoginRequiredMixin, View):
+    """Render the canonical message log for a session as an HTMX fragment.
+
+    The SSE stream reloads this once a reply finishes so the optimistic
+    streamed bubble is replaced by the same rendering used on page load.
+    """
+
+    def get(self, request, pk):
+        session = get_object_or_404(ConversationSession, pk=pk, user=request.user)
+        return render(request, 'chat/index.html#message-log', {
+            'chat_messages': build_chat_log(get_message_history(session.thread_id)),
         })
 
 
@@ -87,8 +101,8 @@ class MessageStreamView(LoginRequiredMixin, View):
         session.save(update_fields=['pending_message', 'modified'])
 
         def event_stream():
-            for chunk in generate_reply_stream(message, session.thread_id, request.user.id):
-                yield sse_event('ai-chunk', escape(chunk))
+            for event, data in generate_reply_stream(message, session.thread_id, request.user.id):
+                yield sse_event(event, escape(data))
             yield sse_event('done', '')
 
         response = StreamingHttpResponse(event_stream(), content_type='text/event-stream')
