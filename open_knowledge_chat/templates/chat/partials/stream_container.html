@@ -10,12 +10,13 @@ then on `done` reloads the canonical message log so tool calls render as collaps
      hx-target="#chat-log"
      hx-swap="innerHTML"
      class="d-flex flex-column gap-2"
-     x-data
+     x-data="{ hasContent: false }"
      x-init="new MutationObserver(() => {
          $refs.aiOut.innerHTML = renderMarkdown($refs.aiRaw.textContent);
+         hasContent = $refs.aiRaw.textContent.length > 0;
      }).observe($refs.aiRaw, { childList: true, characterData: true, subtree: true })">
     <div class="chat-bubble align-self-end bg-primary text-white rounded p-2 px-3">{{ message }}</div>
-    <div sse-swap="tool" class="align-self-start small text-muted fst-italic"></div>
-    <div x-ref="aiRaw" sse-swap="ai-chunk" hx-swap="beforeend" class="d-none"></div>
-    <div x-ref="aiOut" class="chat-bubble markdown-body align-self-start bg-white border rounded p-2 px-3"></div>
+    <div sse-swap="tool" hx-target="this" hx-swap="innerHTML" class="align-self-start small text-muted fst-italic"></div>
+    <div x-ref="aiRaw" sse-swap="ai-chunk" hx-target="this" hx-swap="beforeend" class="d-none"></div>
+    <div x-ref="aiOut" x-show="hasContent" class="chat-bubble markdown-body align-self-start bg-white border rounded p-2 px-3"></div>
 </div>
