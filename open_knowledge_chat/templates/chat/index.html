@@ -72,6 +72,8 @@
             {% empty %}
             <p class="text-muted text-center">Send a message to start the conversation.</p>
             {% endfor %}
+            {# Scroll sentinel: initializes last, after every bubble's markdown has rendered, so the log lands at the bottom. #}
+            <div class="d-none" x-data x-init="$el.closest('#chat-log').scrollTop = $el.closest('#chat-log').scrollHeight"></div>
             {% endpartialdef %}
         </div>
 
