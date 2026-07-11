@@ -7,12 +7,13 @@ import atexit
 
 from django.conf import settings
 from langchain.agents import create_agent
+from langchain.chat_models import init_chat_model
 from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.postgres import PostgresSaver
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
-from document.services import search_knowledge_base
+from chat.llm.registry import MODELS, TOOL_REGISTRY
 
 # A pooled connection lets the checkpointer be shared safely across concurrent requests.
 _pool = ConnectionPool(
@@ -21,23 +22,48 @@ _pool = ConnectionPool(
     open=True,
 )
 checkpointer = PostgresSaver(_pool)
-agent = create_agent('openai:gpt-5.4-mini', tools=[search_knowledge_base], checkpointer=checkpointer)
 
-# Human-friendly progress labels shown while a tool runs, keyed by tool name.
-TOOL_LABELS = {
-    'search_knowledge_base': 'Searching knowledge base…',
-}
-
-# Past-tense labels for the collapsed tool pill once the call has finished.
-TOOL_RESULT_LABELS = {
-    'search_knowledge_base': 'Searched knowledge base',
-}
+# Compiled agents are reused across requests, keyed by (profile id, profile.modified)
+# so a profile edit transparently rebuilds its agent on next use.
+_agent_cache = {}
 
 
-def get_message_history(thread_id):
+def _model_kwargs(profile):
+    """Translate a profile's knobs into init_chat_model kwargs the model supports."""
+    spec = MODELS[profile.model_key]
+    kwargs = {}
+    if spec.supports_temperature and profile.temperature is not None:
+        kwargs['temperature'] = profile.temperature
+    if spec.supports_reasoning and profile.use_reasoning:
+        # Only models flagged as reasoning-capable receive this knob.
+        kwargs['reasoning_effort'] = 'medium'
+    return kwargs
+
+
+def build_agent(profile):
+    """Return a langchain agent configured for ``profile``, cached by id + modified time."""
+    cache_key = (profile.id, profile.modified)
+    agent = _agent_cache.get(cache_key)
+    if agent is None:
+        model = init_chat_model(profile.model_key, **_model_kwargs(profile))
+        tools = [TOOL_REGISTRY[key].callable for key in profile.enabled_tools if key in TOOL_REGISTRY]
+        agent = create_agent(
+            model,
+            tools=tools,
+            system_prompt=profile.system_prompt or None,
+            checkpointer=checkpointer,
+        )
+        # Evict any agent compiled for an earlier version of this profile.
+        for key in [k for k in _agent_cache if k[0] == profile.id]:
+            del _agent_cache[key]
+        _agent_cache[cache_key] = agent
+    return agent
+
+
+def get_message_history(profile, thread_id):
     """Return the messages exchanged so far on ``thread_id``, oldest first."""
     config = {'configurable': {'thread_id': str(thread_id)}}
-    return agent.get_state(config).values.get('messages', [])
+    return build_agent(profile).get_state(config).values.get('messages', [])
 
 
 def build_chat_log(messages):
@@ -61,8 +87,9 @@ def build_chat_log(messages):
             if tool_calls:
                 calls = []
                 for call in tool_calls:
+                    spec = TOOL_REGISTRY.get(call['name'])
                     entry = {
-                        'label': TOOL_RESULT_LABELS.get(call['name'], call['name']),
+                        'label': spec.done_label if spec else call['name'],
                         'query': call.get('args', {}).get('query', ''),
                         'result': '',
                     }
@@ -74,7 +101,7 @@ def build_chat_log(messages):
     return log
 
 
-def generate_reply_stream(message, thread_id, user_id):
+def generate_reply_stream(profile, message, thread_id, user_id):
     """Yield ``(event, data)`` pairs for the AI's reply as it's produced.
 
     Emits ``ai-chunk`` events for assistant text and ``tool`` events announcing
@@ -84,7 +111,7 @@ def generate_reply_stream(message, thread_id, user_id):
     """
     config = {'configurable': {'thread_id': str(thread_id), 'user_id': user_id}}
     announced_tools = set()
-    for chunk, _metadata in agent.stream(
+    for chunk, _metadata in build_agent(profile).stream(
         {'messages': [HumanMessage(message)]},
         config=config,
         stream_mode='messages',
@@ -96,7 +123,8 @@ def generate_reply_stream(message, thread_id, user_id):
             # Only announce each tool once per reply, even if it produces multiple chunks.
             if name and name not in announced_tools:
                 announced_tools.add(name)
-                yield 'tool', TOOL_LABELS.get(name, f'Using {name}…')
+                spec = TOOL_REGISTRY.get(name)
+                yield 'tool', spec.running_label if spec else f'Using {name}…'
         if chunk.content:
             yield 'ai-chunk', chunk.content
 

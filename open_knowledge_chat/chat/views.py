@@ -1,12 +1,21 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import ProtectedError, Q
 from django.http import HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils.html import escape
 from django.views import View
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
-from chat.models import ConversationSession
+from chat.forms import ChatProfileForm
+from chat.llm.registry import MODELS
+from chat.models import ChatProfile, ConversationSession
 from chat.services import build_chat_log, generate_reply_stream, get_message_history
+
+
+def default_profile():
+    """The profile new conversations fall back to: a global one, else any profile."""
+    return ChatProfile.objects.filter(owner__isnull=True).first() or ChatProfile.objects.first()
 
 
 def sse_event(name, data):
@@ -32,13 +41,16 @@ class ChatIndexView(LoginRequiredMixin, View):
         if active_session is None:
             active_session = sessions.first()
         if active_session is None:
-            active_session = ConversationSession.objects.create(user=request.user)
+            active_session = ConversationSession.objects.create(user=request.user, profile=default_profile())
             sessions = request.user.conversation_sessions.all()
 
         return render(request, 'chat/index.html', {
             'sessions': sessions,
             'active_session': active_session,
-            'chat_messages': build_chat_log(get_message_history(active_session.thread_id)),
+            'profiles': ChatProfile.objects.all(),
+            'chat_messages': build_chat_log(
+                get_message_history(active_session.profile, active_session.thread_id)
+            ),
         })
 
 
@@ -52,7 +64,7 @@ class MessageLogView(LoginRequiredMixin, View):
     def get(self, request, pk):
         session = get_object_or_404(ConversationSession, pk=pk, user=request.user)
         return render(request, 'chat/index.html#message-log', {
-            'chat_messages': build_chat_log(get_message_history(session.thread_id)),
+            'chat_messages': build_chat_log(get_message_history(session.profile, session.thread_id)),
         })
 
 
@@ -60,9 +72,13 @@ class NewSessionView(LoginRequiredMixin, View):
     """Create a fresh conversation session and switch to it."""
 
     def post(self, request):
-        session = ConversationSession.objects.filter(user=request.user, used=False).first()
+        requested = request.POST.get('profile')
+        profile = get_object_or_404(ChatProfile, pk=requested) if requested else default_profile()
+        # Reuse an unused session only when it already runs the chosen profile,
+        # since a session's profile is fixed once created.
+        session = ConversationSession.objects.filter(user=request.user, used=False, profile=profile).first()
         if session is None:
-            session = ConversationSession.objects.create(user=request.user)
+            session = ConversationSession.objects.create(user=request.user, profile=profile)
         return redirect(f"{reverse('chat:index')}?session={session.pk}")
 
 
@@ -101,7 +117,7 @@ class MessageStreamView(LoginRequiredMixin, View):
         session.save(update_fields=['pending_message', 'modified'])
 
         def event_stream():
-            for event, data in generate_reply_stream(message, session.thread_id, request.user.id):
+            for event, data in generate_reply_stream(session.profile, message, session.thread_id, request.user.id):
                 yield sse_event(event, escape(data))
             yield sse_event('done', '')
 
@@ -109,3 +125,77 @@ class MessageStreamView(LoginRequiredMixin, View):
         response['Cache-Control'] = 'no-cache'
         response['X-Accel-Buffering'] = 'no'
         return response
+
+
+class ProfileListView(LoginRequiredMixin, ListView):
+    """List all shared profiles; the template gates edit/delete to those the user owns."""
+
+    model = ChatProfile
+    template_name = 'chat/profiles/list.html'
+    context_object_name = 'profiles'
+
+
+class ProfileDetailView(LoginRequiredMixin, DetailView):
+    """Read-only view of a single profile."""
+
+    model = ChatProfile
+    template_name = 'chat/profiles/detail.html'
+    context_object_name = 'profile'
+
+
+class OwnerEditableMixin:
+    """Restrict edit/delete to a profile's owner; staff may also edit global ones."""
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return ChatProfile.objects.filter(Q(owner=user) | Q(owner__isnull=True))
+        return ChatProfile.objects.filter(owner=user)
+
+
+class ProfileFormContextMixin:
+    """Expose each model's capability flags so the form can show/hide knobs client-side."""
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['model_specs'] = {
+            key: {'temperature': spec.supports_temperature, 'reasoning': spec.supports_reasoning}
+            for key, spec in MODELS.items()
+        }
+        return context
+
+
+class ProfileCreateView(ProfileFormContextMixin, LoginRequiredMixin, CreateView):
+    """Create a profile owned by the current user."""
+
+    model = ChatProfile
+    form_class = ChatProfileForm
+    template_name = 'chat/profiles/form.html'
+    success_url = reverse_lazy('chat:profiles')
+
+    def form_valid(self, form):
+        form.instance.owner = self.request.user
+        return super().form_valid(form)
+
+
+class ProfileUpdateView(ProfileFormContextMixin, OwnerEditableMixin, LoginRequiredMixin, UpdateView):
+    """Edit a profile the user is allowed to edit."""
+
+    form_class = ChatProfileForm
+    template_name = 'chat/profiles/form.html'
+    success_url = reverse_lazy('chat:profiles')
+
+
+class ProfileDeleteView(OwnerEditableMixin, LoginRequiredMixin, DeleteView):
+    """Delete a profile the user owns (PROTECT blocks deleting one still in use)."""
+
+    template_name = 'chat/profiles/confirm_delete.html'
+    success_url = reverse_lazy('chat:profiles')
+
+    def form_valid(self, form):
+        try:
+            return super().form_valid(form)
+        except ProtectedError:
+            return self.render_to_response(self.get_context_data(
+                error='This profile is used by an existing conversation and cannot be deleted.',
+            ))

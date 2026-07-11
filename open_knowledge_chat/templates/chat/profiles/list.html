@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat Profiles · Open Knowledge Chat{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 900px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Chat profiles</h1>
+        <a href="{% url 'chat:profile_create' %}" class="btn btn-primary">+ New profile</a>
+    </div>
+
+    <div class="list-group">
+        {% for profile in profiles %}
+        <div class="list-group-item d-flex justify-content-between align-items-start">
+            <div class="me-3">
+                <a href="{% url 'chat:profile_detail' profile.pk %}" class="fw-semibold text-decoration-none">
+                    {{ profile.name }}
+                </a>
+                {% if profile.owner_id is None %}
+                <span class="badge text-bg-secondary ms-1">Global</span>
+                {% endif %}
+                <div class="small text-muted">
+                    {{ profile.get_model_key_display }}
+                    · {{ profile.enabled_tools|length }} tool{{ profile.enabled_tools|length|pluralize }}
+                </div>
+            </div>
+            <div class="d-flex gap-2 flex-shrink-0">
+                {% if profile.owner_id == user.pk or profile.owner_id is None and user.is_staff %}
+                <a href="{% url 'chat:profile_edit' profile.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                <a href="{% url 'chat:profile_delete' profile.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-muted">No profiles yet.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

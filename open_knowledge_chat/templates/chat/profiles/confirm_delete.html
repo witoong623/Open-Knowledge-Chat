@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete {{ object.name }} · Open Knowledge Chat{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 600px;">
+    <h1 class="h3 mb-4">Delete profile</h1>
+
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <p>Are you sure you want to delete <strong>{{ object.name }}</strong>? This cannot be undone.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-danger" {% if error %}disabled{% endif %}>Delete</button>
+            <a href="{% url 'chat:profiles' %}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

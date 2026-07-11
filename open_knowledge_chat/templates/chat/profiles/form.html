@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}New{% endif %} Profile · Open Knowledge Chat{% endblock %}
+
+{% block content %}
+{{ model_specs|json_script:"model-specs" }}
+<div class="container py-4" style="max-width: 720px;"
+     x-data="{
+        specs: JSON.parse(document.getElementById('model-specs').textContent),
+        model: '{{ form.model_key.value|default:'' }}',
+        get caps() { return this.specs[this.model] || { temperature: false, reasoning: false }; }
+     }">
+    <h1 class="h3 mb-4">{% if form.instance.pk %}Edit profile{% else %}New profile{% endif %}</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="mb-3">
+            <label for="{{ form.name.id_for_label }}" class="form-label">Name</label>
+            <input type="text" name="{{ form.name.html_name }}" id="{{ form.name.id_for_label }}"
+                   value="{{ form.name.value|default:'' }}"
+                   class="form-control {% if form.name.errors %}is-invalid{% endif %}" required>
+            <div class="invalid-feedback d-block">{{ form.name.errors|join:', ' }}</div>
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.model_key.id_for_label }}" class="form-label">Model</label>
+            <select name="{{ form.model_key.html_name }}" id="{{ form.model_key.id_for_label }}"
+                    x-model="model" class="form-select {% if form.model_key.errors %}is-invalid{% endif %}">
+                {% for value, label in form.fields.model_key.choices %}
+                <option value="{{ value }}" {% if value == form.model_key.value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <div class="invalid-feedback d-block">{{ form.model_key.errors|join:', ' }}</div>
+        </div>
+
+        <div class="mb-3" x-show="caps.temperature" x-cloak>
+            <label for="{{ form.temperature.id_for_label }}" class="form-label">Temperature</label>
+            <input type="number" step="0.1" min="0" max="2" name="{{ form.temperature.html_name }}"
+                   id="{{ form.temperature.id_for_label }}" value="{{ form.temperature.value|default:'' }}"
+                   class="form-control {% if form.temperature.errors %}is-invalid{% endif %}">
+            <div class="form-text">Leave blank to use the model default.</div>
+            <div class="invalid-feedback d-block">{{ form.temperature.errors|join:', ' }}</div>
+        </div>
+
+        <div class="form-check mb-3" x-show="caps.reasoning" x-cloak>
+            <input type="checkbox" name="{{ form.use_reasoning.html_name }}" id="{{ form.use_reasoning.id_for_label }}"
+                   class="form-check-input" {% if form.use_reasoning.value %}checked{% endif %}>
+            <label for="{{ form.use_reasoning.id_for_label }}" class="form-check-label">Use reasoning</label>
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.system_prompt.id_for_label }}" class="form-label">System prompt</label>
+            <textarea name="{{ form.system_prompt.html_name }}" id="{{ form.system_prompt.id_for_label }}"
+                      rows="4" class="form-control {% if form.system_prompt.errors %}is-invalid{% endif %}">{{ form.system_prompt.value|default:'' }}</textarea>
+            <div class="invalid-feedback d-block">{{ form.system_prompt.errors|join:', ' }}</div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label">{{ form.enabled_tools.label }}</label>
+            {% with selected=form.enabled_tools.value|default_if_none:'' %}
+            {% for value, label in form.fields.enabled_tools.choices %}
+            <div class="form-check">
+                <input type="checkbox" name="{{ form.enabled_tools.html_name }}" value="{{ value }}"
+                       id="tool-{{ value }}" class="form-check-input"
+                       {% if value in selected %}checked{% endif %}>
+                <label for="tool-{{ value }}" class="form-check-label">{{ label }}</label>
+            </div>
+            {% empty %}
+            <p class="text-muted small mb-0">No tools available.</p>
+            {% endfor %}
+            {% endwith %}
+            <div class="invalid-feedback d-block">{{ form.enabled_tools.errors|join:', ' }}</div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a href="{% url 'chat:profiles' %}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

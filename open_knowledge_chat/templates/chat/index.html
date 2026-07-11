@@ -27,8 +27,16 @@
     <aside class="chat-sidebar border-end bg-light p-3 d-flex flex-column">
         <form action="{% url 'chat:new_session' %}" method="post" class="mb-3">
             {% csrf_token %}
+            <select name="profile" class="form-select form-select-sm mb-2" aria-label="Chat profile">
+                {% for profile in profiles %}
+                <option value="{{ profile.pk }}">{{ profile.name }}</option>
+                {% endfor %}
+            </select>
             <button type="submit" class="btn btn-primary w-100">+ New chat</button>
         </form>
+        <div class="text-end mb-3">
+            <a href="{% url 'chat:profiles' %}" class="small">Manage profiles</a>
+        </div>
         <div class="list-group">
             {% for session in sessions %}
             <a href="{% url 'chat:index' %}?session={{ session.pk }}"
@@ -43,6 +51,9 @@
 
     <!-- Main chat area -->
     <main class="flex-grow-1 d-flex flex-column">
+        <div class="border-bottom px-3 py-2 small text-muted">
+            Profile: <span class="fw-semibold">{{ active_session.profile.name }}</span>
+        </div>
         <div id="chat-log" class="flex-grow-1 p-3 d-flex flex-column gap-2"
              x-data
              x-init="$el.scrollTop = $el.scrollHeight"
