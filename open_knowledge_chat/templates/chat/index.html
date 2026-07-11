@@ -34,9 +34,6 @@
             </select>
             <button type="submit" class="btn btn-primary w-100">+ New chat</button>
         </form>
-        <div class="text-end mb-3">
-            <a href="{% url 'chat:profiles' %}" class="small">Manage profiles</a>
-        </div>
         <div class="list-group">
             {% for session in sessions %}
             <a href="{% url 'chat:index' %}?session={{ session.pk }}"

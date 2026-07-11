@@ -7,7 +7,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">{{ profile.name }}</h1>
         {% if profile.owner_id == user.pk or profile.owner_id is None and user.is_staff %}
-        <a href="{% url 'chat:profile_edit' profile.pk %}" class="btn btn-outline-secondary">Edit</a>
+        <a href="{% url 'profiles:edit' profile.pk %}" class="btn btn-outline-secondary">Edit</a>
         {% endif %}
     </div>
 
@@ -28,6 +28,6 @@
         <dd class="col-sm-9" style="white-space: pre-wrap;">{{ profile.system_prompt|default:'—' }}</dd>
     </dl>
 
-    <a href="{% url 'chat:profiles' %}" class="btn btn-outline-secondary">Back to profiles</a>
+    <a href="{% url 'profiles:list' %}" class="btn btn-outline-secondary">Back to profiles</a>
 </div>
 {% endblock %}

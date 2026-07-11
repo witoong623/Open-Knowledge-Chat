@@ -1,7 +1,7 @@
 from django import forms
 
 from chat.llm.registry import MODELS, tool_choices
-from chat.models import ChatProfile
+from profiles.models import ChatProfile
 
 
 class ChatProfileForm(forms.ModelForm):
