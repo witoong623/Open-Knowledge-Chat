@@ -15,25 +15,35 @@ from document.services import search_knowledge_base
 
 @dataclass(frozen=True)
 class ModelSpec:
-    """A supported LLM, keyed in ``MODELS`` by its langchain ``model_key``.
+    """A supported LLM, keyed in ``MODELS`` by an arbitrary registry slug.
+
+    ``model_id`` is the langchain ``provider:model`` identifier passed to
+    ``init_chat_model``.
 
     The capability flags drive form validation and which knobs the profile UI
     exposes — e.g. reasoning models typically reject a ``temperature``.
     """
+    model_id: str
     label: str
     supports_temperature: bool = False
     supports_reasoning: bool = False
 
 
-# Supported models, keyed by the langchain ``provider:model`` identifier passed
-# to ``init_chat_model``. Adding a model here requires its provider package to be
-# installed (see pyproject.toml).
+# Supported models, keyed by an arbitrary registry slug (stored as a profile's
+# ``model_key``). Each entry's ``model_id`` is the langchain ``provider:model``
+# identifier; its provider package must be installed (see pyproject.toml).
 MODELS: dict[str, ModelSpec] = {
-    'openai:gpt-5.4-mini': ModelSpec(label='GPT-5.4 Mini', supports_temperature=True),
-    'openai:gpt-5.4': ModelSpec(label='GPT-5.4', supports_temperature=True),
-    # Reasoning models reject a temperature; enable use_reasoning instead. Add a
-    # real reasoning model id here once its provider package is installed, e.g.:
-    # 'openai:o4-mini': ModelSpec(label='o4 Mini', supports_reasoning=True),
+    'gpt-5.4-mini': ModelSpec(
+        model_id='openai:gpt-5.4-mini', label='GPT-5.4 Mini', supports_temperature=True,
+    ),
+    'gpt-5.4': ModelSpec(
+        model_id='openai:gpt-5.4', label='GPT-5.4', supports_temperature=True,
+    ),
+    # The same model_id can back a reasoning variant. Reasoning models reject a
+    # temperature; enable use_reasoning instead.
+    'gpt-5.4-reasoning': ModelSpec(
+        model_id='openai:gpt-5.4', label='GPT-5.4 (Reasoning)', supports_reasoning=True,
+    ),
 }
 
 

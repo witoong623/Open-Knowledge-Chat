@@ -9,7 +9,7 @@ from profiles.models import ChatProfile
 DEFAULT_PROFILES = [
     {
         'name': 'Knowledge Base Q&A',
-        'model_key': 'openai:gpt-5.4-mini',
+        'model_key': 'gpt-5.4-mini',
         'temperature': None,
         'use_reasoning': False,
         'system_prompt': (
@@ -21,7 +21,7 @@ DEFAULT_PROFILES = [
     },
     {
         'name': 'Plain Chat',
-        'model_key': 'openai:gpt-5.4-mini',
+        'model_key': 'gpt-5.4-mini',
         'temperature': None,
         'use_reasoning': False,
         'system_prompt': '',

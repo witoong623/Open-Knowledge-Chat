@@ -28,9 +28,8 @@ checkpointer = PostgresSaver(_pool)
 _agent_cache = {}
 
 
-def _model_kwargs(profile):
+def _model_kwargs(spec, profile):
     """Translate a profile's knobs into init_chat_model kwargs the model supports."""
-    spec = MODELS[profile.model_key]
     kwargs = {}
     if spec.supports_temperature and profile.temperature is not None:
         kwargs['temperature'] = profile.temperature
@@ -45,7 +44,8 @@ def build_agent(profile):
     cache_key = (profile.id, profile.modified)
     agent = _agent_cache.get(cache_key)
     if agent is None:
-        model = init_chat_model(profile.model_key, **_model_kwargs(profile))
+        spec = MODELS[profile.model_key]
+        model = init_chat_model(spec.model_id, **_model_kwargs(spec, profile))
         tools = [TOOL_REGISTRY[key].callable for key in profile.enabled_tools if key in TOOL_REGISTRY]
         agent = create_agent(
             model,
