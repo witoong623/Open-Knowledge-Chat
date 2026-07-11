@@ -1,78 +1,75 @@
 import mimetypes
 
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404, render
-from django.views import View
-from django.views.generic import TemplateView
+from django.views.decorators.http import require_http_methods
 
 from document.forms import DocumentUploadForm
 from document.models import Document
 from document.tasks import ingest_document
 
 
-class DocumentIndexView(LoginRequiredMixin, TemplateView):
+@login_required
+@require_http_methods(['GET'])
+def index(request):
     """Render the document knowledge base page with the upload form and document list."""
-
-    template_name = 'document/index.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['documents'] = self.request.user.documents.all()
-        context.setdefault('form', DocumentUploadForm())
-        return context
+    return render(request, 'document/index.html', {
+        'documents': request.user.documents.all(),
+        'form': DocumentUploadForm(),
+    })
 
 
-class DocumentUploadView(LoginRequiredMixin, View):
+@login_required
+@require_http_methods(['POST'])
+def upload(request):
     """Handle a document upload and return the refreshed document section."""
+    form = DocumentUploadForm(request.POST, request.FILES)
+    if form.is_valid():
+        document = form.save(commit=False)
+        document.user = request.user
+        document.name = document.file.name
+        document.ingestion_status = Document.IngestionStatus.INGESTING
+        document.save()
+        ingest_document.delay_on_commit(document.id)
+        form = DocumentUploadForm()
 
-    def post(self, request):
-        form = DocumentUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            document = form.save(commit=False)
-            document.user = request.user
-            document.name = document.file.name
-            document.ingestion_status = Document.IngestionStatus.INGESTING
-            document.save()
-            ingest_document.delay_on_commit(document.id)
-            form = DocumentUploadForm()
-
-        return render(request, 'document/index.html#document-section', {
-            'documents': request.user.documents.all(),
-            'form': form,
-        })
+    return render(request, 'document/index.html#document-section', {
+        'documents': request.user.documents.all(),
+        'form': form,
+    })
 
 
-class DocumentDeleteView(LoginRequiredMixin, View):
+@login_required
+@require_http_methods(['DELETE'])
+def delete(request, pk):
     """Delete an uploaded document and return the refreshed document section."""
+    document = get_object_or_404(Document, pk=pk, user=request.user)
+    document.file.delete(save=False)
+    document.delete()
 
-    def delete(self, request, pk):
-        document = get_object_or_404(Document, pk=pk, user=request.user)
-        document.file.delete(save=False)
-        document.delete()
-
-        return render(request, 'document/index.html#document-section', {
-            'documents': request.user.documents.all(),
-            'form': DocumentUploadForm(),
-        })
+    return render(request, 'document/index.html#document-section', {
+        'documents': request.user.documents.all(),
+        'form': DocumentUploadForm(),
+    })
 
 
-class DocumentStatusView(LoginRequiredMixin, View):
+@login_required
+@require_http_methods(['GET'])
+def status(request, pk):
     """Return the ingestion status badge for a document (polled while ingesting)."""
-
-    def get(self, request, pk):
-        document = get_object_or_404(Document, pk=pk, user=request.user)
-        return render(request, 'document/index.html#document-status', {'document': document})
+    document = get_object_or_404(Document, pk=pk, user=request.user)
+    return render(request, 'document/index.html#document-status', {'document': document})
 
 
-class DocumentPreviewView(LoginRequiredMixin, View):
+@login_required
+@require_http_methods(['GET'])
+def preview(request, pk):
     """Stream an uploaded document back for inline preview in the browser."""
+    document = get_object_or_404(Document, pk=pk, user=request.user)
 
-    def get(self, request, pk):
-        document = get_object_or_404(Document, pk=pk, user=request.user)
+    content_type, _ = mimetypes.guess_type(document.name)
+    if content_type is None:
+        content_type = 'text/plain' if document.extension in ('txt', 'md') else 'application/octet-stream'
 
-        content_type, _ = mimetypes.guess_type(document.name)
-        if content_type is None:
-            content_type = 'text/plain' if document.extension in ('txt', 'md') else 'application/octet-stream'
-
-        return FileResponse(document.file.open('rb'), filename=document.name, content_type=content_type)
+    return FileResponse(document.file.open('rb'), filename=document.name, content_type=content_type)

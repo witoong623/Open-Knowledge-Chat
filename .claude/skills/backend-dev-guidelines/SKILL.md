@@ -36,6 +36,22 @@ Use the following table to decide how to set `blank` and `null` argument of a mo
 If you want to check specific Django features by running code in Python interpreter. Please use Django shell to run to get better output.
 
 ## Django view guidelines
+### Choosing between class-based and function-based views
+Prefer a **function-based view** when the view handles a single HTTP method with plain, custom logic. It keeps the flow linear and easy to read without the indirection of a class. Gate access and methods with decorators:
+
+```python
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
+
+
+@login_required
+@require_http_methods(['POST'])
+def new_session(request):
+    ...
+```
+
+Use a **class-based view** when it earns its keep by reusing Django's generic machinery — `ListView`, `DetailView`, `CreateView`, `UpdateView`, `DeleteView` — or when shared behavior is factored into mixins (e.g. an owner-scoped queryset, extra form context). Don't wrap plain single-method logic in a bare `View` subclass; convert those to function-based views.
+
 ### Integrating HTMX with Django view
 You can use [django-htmx](resources/django-htmx.md) package to help integrating HTMX with Django view e.g. check if request is made from HTMX or return response specifically for HTMX.
 

@@ -5,11 +5,11 @@ from chat import views
 app_name = 'chat'
 
 urlpatterns = [
-    path('', views.ChatIndexView.as_view(), name='index'),
-    path('sessions/new/', views.NewSessionView.as_view(), name='new_session'),
-    path('sessions/<int:pk>/messages/', views.MessageLogView.as_view(), name='message_log'),
-    path('sessions/<int:pk>/message/', views.SendMessageView.as_view(), name='send_message'),
-    path('sessions/<int:pk>/message/stream/', views.MessageStreamView.as_view(), name='stream_message'),
+    path('', views.chat_index, name='index'),
+    path('sessions/new/', views.new_session, name='new_session'),
+    path('sessions/<int:pk>/messages/', views.message_log, name='message_log'),
+    path('sessions/<int:pk>/message/', views.send_message, name='send_message'),
+    path('sessions/<int:pk>/message/stream/', views.message_stream, name='stream_message'),
     path('profiles/', views.ProfileListView.as_view(), name='profiles'),
     path('profiles/new/', views.ProfileCreateView.as_view(), name='profile_create'),
     path('profiles/<int:pk>/', views.ProfileDetailView.as_view(), name='profile_detail'),
