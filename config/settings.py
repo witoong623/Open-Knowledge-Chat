@@ -154,6 +154,8 @@ with PostgresSaver.from_conn_string(LANGCHAIN_DB_URI) as checkpointer:
 VECTOR_DB_URL = 'postgresql+psycopg://okc:okc_password@localhost:5432/langchain'
 VECTOR_COLLECTION_NAME = 'documents'
 EMBEDDING_MODEL = 'text-embedding-3-small'
+# langchain ``provider:model`` id used to extract a document title during ingestion.
+TITLE_EXTRACTION_MODEL = 'openai:gpt-5.4-mini'
 
 
 # Celery

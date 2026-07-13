@@ -26,6 +26,7 @@ class Document(TimeStampedModel):
         related_name='documents',
     )
     name = models.CharField(max_length=255)
+    title = models.CharField(max_length=255, blank=True, help_text='Document title')
     file = models.FileField(
         upload_to=document_upload_path,
         validators=[FileExtensionValidator(allowed_extensions=ALLOWED_EXTENSIONS)],
@@ -45,3 +46,8 @@ class Document(TimeStampedModel):
     @property
     def extension(self):
         return self.name.rsplit('.', 1)[-1].lower()
+
+    @property
+    def display_title(self):
+        """Title to show in the UI, falling back to the filename when unset."""
+        return self.title or self.name

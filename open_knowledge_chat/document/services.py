@@ -8,6 +8,7 @@ import atexit
 import logging
 
 from django.conf import settings
+from langchain.chat_models import init_chat_model
 from langchain_core.documents import Document as LangchainDocument
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
@@ -15,6 +16,7 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_opendataloader_pdf import OpenDataLoaderPDFLoader
 from langchain_postgres import PGVector
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from pydantic import BaseModel, Field
 from sqlalchemy import create_engine
 
 from document.models import Document
@@ -55,6 +57,33 @@ def _load_documents(document):
     return [LangchainDocument(page_content=_read_text(document))]
 
 
+class _ExtractedTitle(BaseModel):
+    """Structured result of extracting a title from a document's opening text."""
+
+    title: str = Field(
+        description=(
+            "The document's title if one is clearly present in the text (e.g. a book "
+            "or paper title, or a top-level heading). Empty string if no clear title "
+            'is present.'
+        ),
+    )
+
+
+def _extract_title(text):
+    """Use an LLM to extract a document title from its opening text.
+
+    Returns the extracted title, or ``None`` when no clear title can be found
+    (e.g. a plain notes file). The caller falls back to the filename in that case.
+    """
+    model = init_chat_model(settings.TITLE_EXTRACTION_MODEL).with_structured_output(_ExtractedTitle)
+    result = model.invoke(
+        'You are given the opening text of a document. Extract its title if one is clearly '
+        'present. If there is no clear title, respond with an empty string — do not invent or '
+        f'guess a title.\n\nOpening text:\n{text}'
+    )
+    return result.title.strip() or None
+
+
 def ingest_file_document(document_id):
     """Ingest a document into the knowledge base, tracking status on the model.
 
@@ -77,6 +106,11 @@ def ingest_file_document(document_id):
         chunks = splitter.split_documents(docs)
 
         if chunks:
+            # Extract a title from the first chunk; leave blank so display falls
+            # back to the filename when the document has no clear title.
+            title = _extract_title(chunks[0].page_content)
+            if title:
+                document.title = title
             get_vector_store().add_documents(chunks)
 
         document.ingestion_status = Document.IngestionStatus.COMPLETED
@@ -84,7 +118,7 @@ def ingest_file_document(document_id):
         logger.exception('Failed to ingest document %s', document_id)
         document.ingestion_status = Document.IngestionStatus.FAILED
 
-    document.save(update_fields=['ingestion_status', 'modified'])
+    document.save(update_fields=['title', 'ingestion_status', 'modified'])
     return document.ingestion_status
 
 

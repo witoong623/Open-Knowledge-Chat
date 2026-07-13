@@ -28,7 +28,8 @@
             {% for document in documents %}
             <div class="list-group-item d-flex justify-content-between align-items-center">
                 <div>
-                    <div class="fw-medium">{{ document.name }}</div>
+                    <div class="fw-medium">{{ document.display_title }}</div>
+                    <div class="text-muted small">{{ document.name }}</div>
                     <div class="text-muted small">Uploaded {{ document.created|date:'Y-m-d H:i' }}</div>
                     {% partialdef document-status inline %}
                     <span id="document-status-{{ document.pk }}"
