@@ -12,13 +12,17 @@ def document_upload_path(instance, filename):
 
 
 class Document(TimeStampedModel):
-    """An uploaded file that can be ingested into the knowledge base."""
+    """A file or website that can be ingested into the knowledge base."""
 
     class IngestionStatus(models.TextChoices):
         NOT_INGESTED = 'not_ingested', 'Not ingested'
         INGESTING = 'ingesting', 'Ingesting'
         COMPLETED = 'completed', 'Completed'
         FAILED = 'failed', 'Failed'
+
+    class SourceType(models.TextChoices):
+        FILE = 'file', 'File'
+        WEBSITE = 'website', 'Website'
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -27,10 +31,17 @@ class Document(TimeStampedModel):
     )
     name = models.CharField(max_length=255)
     title = models.CharField(max_length=255, blank=True, help_text='Document title')
+    source_type = models.CharField(
+        max_length=20,
+        choices=SourceType.choices,
+        default=SourceType.FILE,
+    )
     file = models.FileField(
         upload_to=document_upload_path,
+        blank=True,
         validators=[FileExtensionValidator(allowed_extensions=ALLOWED_EXTENSIONS)],
     )
+    url = models.URLField(max_length=2000, blank=True)
     ingestion_status = models.CharField(
         max_length=20,
         choices=IngestionStatus.choices,
@@ -45,6 +56,8 @@ class Document(TimeStampedModel):
 
     @property
     def extension(self):
+        if '.' not in self.name:
+            return ''
         return self.name.rsplit('.', 1)[-1].lower()
 
     @property

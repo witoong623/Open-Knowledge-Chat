@@ -5,7 +5,7 @@ from django.http import FileResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 
-from document.forms import DocumentUploadForm
+from document.forms import DocumentUploadForm, WebsiteURLForm
 from document.models import Document
 from document.tasks import ingest_document
 
@@ -17,6 +17,7 @@ def index(request):
     return render(request, 'document/index.html', {
         'documents': request.user.documents.all(),
         'form': DocumentUploadForm(),
+        'website_form': WebsiteURLForm(),
     })
 
 
@@ -37,6 +38,29 @@ def upload(request):
     return render(request, 'document/index.html#document-section', {
         'documents': request.user.documents.all(),
         'form': form,
+        'website_form': WebsiteURLForm(),
+    })
+
+
+@login_required
+@require_http_methods(['POST'])
+def upload_website(request):
+    """Handle a website URL submission and return the refreshed document section."""
+    website_form = WebsiteURLForm(request.POST)
+    if website_form.is_valid():
+        document = website_form.save(commit=False)
+        document.user = request.user
+        document.source_type = Document.SourceType.WEBSITE
+        document.name = document.url
+        document.ingestion_status = Document.IngestionStatus.INGESTING
+        document.save()
+        ingest_document.delay_on_commit(document.id)
+        website_form = WebsiteURLForm()
+
+    return render(request, 'document/index.html#document-section', {
+        'documents': request.user.documents.all(),
+        'form': DocumentUploadForm(),
+        'website_form': website_form,
     })
 
 
@@ -51,6 +75,7 @@ def delete(request, pk):
     return render(request, 'document/index.html#document-section', {
         'documents': request.user.documents.all(),
         'form': DocumentUploadForm(),
+        'website_form': WebsiteURLForm(),
     })
 
 

@@ -12,6 +12,8 @@ from langchain.chat_models import init_chat_model
 from langchain_core.documents import Document as LangchainDocument
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
+from langchain_docling import DoclingLoader
+from langchain_docling.loader import ExportType
 from langchain_openai import OpenAIEmbeddings
 from langchain_opendataloader_pdf import OpenDataLoaderPDFLoader
 from langchain_postgres import PGVector
@@ -50,6 +52,10 @@ def _read_text(document):
 
 def _load_documents(document):
     """Return the content of a document as a list of langchain ``Document`` objects."""
+    if document.source_type == Document.SourceType.WEBSITE:
+        loader = DoclingLoader(file_path=document.url, export_type=ExportType.MARKDOWN)
+        return loader.load()
+
     if document.extension == 'pdf':
         loader = OpenDataLoaderPDFLoader(file_path=document.file.path, format='markdown')
         return loader.load()
@@ -95,7 +101,7 @@ def ingest_file_document(document_id):
     document.save(update_fields=['ingestion_status', 'modified'])
 
     try:
-        if document.extension not in SUPPORTED_EXTENSIONS:
+        if document.source_type == Document.SourceType.FILE and document.extension not in SUPPORTED_EXTENSIONS:
             raise ValueError(f'Unsupported file type for ingestion: {document.extension}')
 
         docs = _load_documents(document)
